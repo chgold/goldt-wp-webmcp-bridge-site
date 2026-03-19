@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Connect for WordPress — WebMCP Protocol Bridge</title>
+    <meta name="description" content="Connect AI agents to your WordPress site with OAuth 2.0 and PKCE. Search posts, pages, and content through a secure WebMCP bridge.">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --border: rgba(124, 58, 237, 0.15);
+            --purple: #7c3aed;
+            --purple-light: #a78bfa;
+            --blue: #3b82f6;
+            --cyan: #06b6d4;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- Nav --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 1rem 2rem;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .nav-brand img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+        .nav-links { display: flex; gap: 2rem; list-style: none; }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+
+        /* --- Sections --- */
+        section { padding: 6rem 2rem; }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        /* --- Hero --- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 5rem;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 60px rgba(124, 58, 237, 0.3);
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--purple-light), var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+        .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: var(--purple);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #6d28d9;
+            box-shadow: 0 4px 24px rgba(124, 58, 237, 0.35);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .btn-secondary:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+            color: var(--text-primary);
+        }
+
+        /* --- Clients --- */
+        .clients {
+            text-align: center;
+            padding: 2rem 2rem 4rem;
+        }
+        .clients p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+        .client-logos {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .client-logos span {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .client-logos span:hover { opacity: 0.8; }
+
+        /* --- Features --- */
+        .features { background: var(--bg-secondary); }
+        .section-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--purple-light);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+        }
+        .section-desc {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 3.5rem;
+            font-size: 1.05rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .feature-card:hover {
+            border-color: rgba(124, 58, 237, 0.35);
+            box-shadow: 0 4px 30px rgba(124, 58, 237, 0.08);
+        }
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+            font-size: 1.2rem;
+            background: rgba(124, 58, 237, 0.1);
+            color: var(--purple-light);
+        }
+        .feature-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+        }
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.65;
+        }
+
+        /* --- Tiers --- */
+        .tiers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3.5rem;
+        }
+        .tier-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+            position: relative;
+        }
+        .tier-card.pro {
+            border-color: rgba(124, 58, 237, 0.4);
+        }
+        .tier-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+        .tier-badge.free { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+        .tier-badge.pro-badge { background: rgba(124, 58, 237, 0.15); color: var(--purple-light); }
+        .tier-card h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .tier-card .price {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+        .tier-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .tier-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .tier-list li::before {
+            content: '';
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            border-radius: 50%;
+            background: rgba(124, 58, 237, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237c3aed' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* --- How it Works --- */
+        .steps { background: var(--bg-secondary); }
+        .steps-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .step {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        .step-num {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(124, 58, 237, 0.12);
+            color: var(--purple-light);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid rgba(124, 58, 237, 0.25);
+        }
+        .step h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .step p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        /* --- Contact --- */
+        .contact { text-align: center; }
+        .contact-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3.5rem 2rem;
+            max-width: 560px;
+            margin: 2rem auto 0;
+        }
+        .contact-card p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .contact-email {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: var(--purple-light);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 0.8rem 2rem;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .contact-email:hover {
+            background: rgba(124, 58, 237, 0.08);
+            border-color: rgba(124, 58, 237, 0.5);
+        }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* --- Mobile --- */
+        @media (max-width: 768px) {
+            nav { padding: 0.8rem 1.2rem; }
+            .nav-links { display: none; }
+            section { padding: 4rem 1.2rem; }
+            .hero { min-height: auto; padding-top: 8rem; padding-bottom: 4rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .tiers-grid { grid-template-columns: 1fr; }
+            .steps-list { grid-template-columns: 1fr; gap: 1rem; }
+        }
+
+        /* --- Try It --- */
+        .try-it { background: var(--bg-secondary); }
+        .manifest-block {
+            background: var(--bg-primary);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            max-width: 680px;
+            margin: 2rem auto;
+            flex-wrap: wrap;
+        }
+        .manifest-url {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.95rem;
+            color: var(--cyan);
+            word-break: break-all;
+            flex: 1;
+            min-width: 200px;
+        }
+        .btn-copy {
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .btn-copy:hover { background: #6d28d9; }
+        .btn-copy.copied { background: #059669; }
+        .client-tabs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            max-width: 860px;
+            margin: 2.5rem auto 0;
+        }
+        .client-tab {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.75rem;
+            transition: border-color 0.3s;
+        }
+        .client-tab:hover { border-color: rgba(124, 58, 237, 0.35); }
+        .client-tab h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+        .client-tab ol {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.7;
+            padding-left: 1.2rem;
+        }
+        .client-tab ol li { margin-bottom: 0.3rem; }
+        .try-note {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        /* --- Test Credentials --- */
+        .test-creds {
+            max-width: 560px;
+            margin: 2.5rem auto 0;
+            background: var(--bg-card);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 12px;
+            padding: 2rem 2.5rem;
+            text-align: center;
+        }
+        .test-creds h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+        .test-creds p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+        }
+        .test-creds a.forum-link {
+            color: var(--cyan);
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+            transition: color 0.2s;
+        }
+        .test-creds a.forum-link:hover {
+            color: #22d3ee;
+            text-decoration: underline;
+        }
+        .creds-row {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .cred-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .cred-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .cred-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--cyan);
+            padding: 0.25rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        /* --- Demo Video --- */
+        .demo-placeholder {
+            max-width: 780px;
+            margin: 2.5rem auto 0;
+            aspect-ratio: 16/9;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .play-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(124, 58, 237, 0.15);
+            border: 2px solid rgba(124, 58, 237, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--purple-light);
+        }
+        .demo-placeholder p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* --- Use Cases --- */
+        .use-cases { background: var(--bg-secondary); }
+        .uc-tabs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .uc-tab {
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s;
+            font-family: inherit;
+        }
+        .uc-tab:hover { color: var(--text-secondary); }
+        .uc-tab-active {
+            background: var(--purple);
+            color: #fff;
+        }
+        .uc-tab-active:hover { color: #fff; }
+        .uc-chat {
+            max-width: 760px;
+            margin: 0 auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+        .uc-chat-header {
+            background: var(--bg-card);
+            padding: 0 1rem;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+        .uc-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .uc-dot-r { background: #ef4444; }
+        .uc-dot-y { background: #f59e0b; }
+        .uc-dot-g { background: #10b981; }
+        .uc-chat-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .uc-chat-body { padding: 1.5rem; min-height: 300px; }
+        .uc-content { display: none; }
+        .uc-content.uc-active { display: block; }
+        .uc-bubble {
+            padding: 0.85rem 1.15rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+        .uc-user {
+            background: var(--purple);
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 75%;
+            margin-left: auto;
+        }
+        .uc-ai {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border-radius: 18px 18px 18px 4px;
+            max-width: 85%;
+            border: 1px solid var(--border);
+        }
+        .uc-ai strong { color: var(--text-primary); }
+        .uc-tool {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            padding-left: 0.25rem;
+        }
+        @media (max-width: 768px) {
+            .uc-tabs { gap: 0.35rem; }
+            .uc-tab { font-size: 0.8rem; padding: 0.4rem 0.9rem; }
+            .uc-chat-body { padding: 1rem; }
+            .uc-user { max-width: 88%; }
+            .uc-ai { max-width: 95%; }
+        }
+
+        /* --- Fade-in --- */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+    <div class="nav-inner">
+        <a href="#" class="nav-brand">
+            <img src="icon.png" alt="AI Connect">
+            AI Connect for WordPress
+        </a>
+        <ul class="nav-links">
+            <li><a href="#try-it">Try It</a></li>
+            <li><a href="#use-cases">Use Cases</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#tiers">Plans</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="https://github.com/chgold/goldt-wp-webmcp-bridge" target="_blank">GitHub</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <img src="icon.png" alt="AI Connect" class="hero-icon">
+        <h1>Connect AI Agents<br>to <span class="gradient">Your WordPress Site</span></h1>
+        <p class="hero-sub">
+            A WebMCP Protocol Bridge for WordPress. Let ChatGPT, Claude, Copilot, Gemini, and other AI agents securely interact with your site through OAuth 2.0 with PKCE.
+        </p>
+        <div class="hero-buttons">
+            <a href="#try-it" class="btn btn-primary">
+                Try It Now
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="#features" class="btn btn-secondary">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<!-- Supported Clients -->
+<div class="clients">
+    <p>Works with leading AI platforms</p>
+    <div class="client-logos">
+        <span>ChatGPT</span>
+        <span>Claude</span>
+        <span>GitHub Copilot</span>
+        <span>Gemini</span>
+        <span>Grok</span>
+        <span>DeepSeek</span>
+        <span>Perplexity</span>
+    </div>
+</div>
+
+<!-- Try It Now -->
+<section class="try-it" id="try-it">
+    <div class="container" style="text-align:center;">
+        <div class="section-label">Try It Now</div>
+        <h2 class="section-title">Connect to a live WordPress site in 60 seconds</h2>
+        <p class="section-desc" style="margin-left:auto;margin-right:auto;">Copy this manifest URL and paste it into your AI agent. That's it.</p>
+        <div class="manifest-block">
+            <span class="manifest-url" id="manifest-url">https://goldt-webmcp-bridge.gold-t.co.il/wp-json/goldt-webmcp-bridge/v1/manifest</span>
+            <button class="btn-copy" onclick="copyManifest(this)">Copy URL</button>
+        </div>
+        <div class="client-tabs">
+            <div class="client-tab fade-in">
+                <h4>Claude Desktop</h4>
+                <ol>
+                    <li>Open <strong>Settings &rarr; MCP Servers &rarr; Add</strong></li>
+                    <li>Paste the manifest URL above</li>
+                    <li>Ask Claude anything about the site</li>
+                </ol>
+            </div>
+            <div class="client-tab fade-in">
+                <h4>ChatGPT</h4>
+                <ol>
+                    <li>Go to <strong>Settings &rarr; Tools</strong></li>
+                    <li>Add a WebMCP tool with the URL above</li>
+                    <li>Start chatting with live site data</li>
+                </ol>
+            </div>
+            <div class="client-tab fade-in">
+                <h4>Other AI Agents</h4>
+                <ol>
+                    <li>Any WebMCP-compatible agent can connect</li>
+                    <li>The manifest endpoint is public for discovery</li>
+                    <li>Authentication happens via OAuth when tools are called</li>
+                </ol>
+            </div>
+        </div>
+        <div class="test-creds fade-in">
+            <h4>Ready to install?</h4>
+            <p>Download the free plugin from GitHub and add it to your WordPress site in minutes.</p>
+            <a class="forum-link" href="https://github.com/chgold/goldt-wp-webmcp-bridge/releases/latest" target="_blank">Download v0.3.0 from GitHub</a>
+        </div>
+        <p class="try-note">Works with any WordPress 5.8+ site running PHP 7.4+</p>
+    </div>
+</section>
+
+<!-- Demo -->
+<section id="demo">
+    <div class="container" style="text-align:center;">
+        <div class="section-label">Demo</div>
+        <h2 class="section-title">See it in action</h2>
+        <div class="demo-placeholder fade-in" id="demo-video">
+            <div class="play-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <p>Video coming soon &mdash; Install, connect, chat with your WordPress site</p>
+        </div>
+    </div>
+</section>
+
+<!-- Use Cases -->
+<section class="use-cases" id="use-cases">
+    <div class="container" style="text-align:center;">
+        <div class="section-label">Use Cases</div>
+        <h2 class="section-title">See what AI agents can do with your WordPress site</h2>
+        <p class="section-desc" style="margin-left:auto;margin-right:auto;">Real queries, real tool calls, real answers — powered by your site's content.</p>
+        <div class="uc-tabs">
+            <button type="button" class="uc-tab uc-tab-active" onclick="showUseCase('tech',this)">Tech Blog</button>
+            <button type="button" class="uc-tab" onclick="showUseCase('content',this)">Content</button>
+            <button type="button" class="uc-tab" onclick="showUseCase('woo',this)">WooCommerce</button>
+            <button type="button" class="uc-tab" onclick="showUseCase('analytics',this)">Analytics</button>
+            <button type="button" class="uc-tab" onclick="showUseCase('community',this)">Community</button>
+            <button type="button" class="uc-tab" onclick="showUseCase('research',this)">Research</button>
+        </div>
+        <div class="uc-chat fade-in">
+            <div class="uc-chat-header">
+                <span class="uc-dot uc-dot-r"></span>
+                <span class="uc-dot uc-dot-y"></span>
+                <span class="uc-dot uc-dot-g"></span>
+                <span class="uc-chat-title">AI Connect · WordPress</span>
+            </div>
+            <div class="uc-chat-body">
+
+                <!-- Tech Blog -->
+                <div class="uc-content uc-active" id="uc-tech">
+                    <div class="uc-bubble uc-user">What are the 3 most read technical posts on this site this month?</div>
+                    <div class="uc-tool">🔧 searchPosts({ category: "technology", orderBy: "views", limit: 3, dateRange: "this_month" })</div>
+                    <div class="uc-bubble uc-ai">Based on this month's analytics, the top 3 technical posts are:<br><br><strong>1. "Migrating to PHP 8.3 — What You Need to Know"</strong> — 4,230 views. Covers breaking changes, JIT improvements, and migration tips from a real-world WordPress project.<br><br><strong>2. "Building a Custom Block with React and WordPress 6.5"</strong> — 3,180 views. Step-by-step tutorial with code examples for creating a dynamic Gutenberg block.<br><br><strong>3. "REST API Authentication Patterns Compared"</strong> — 2,870 views. Analyzes OAuth 2.0, JWT, and Application Passwords for WordPress API security.</div>
+                </div>
+
+                <!-- Content -->
+                <div class="uc-content" id="uc-content">
+                    <div class="uc-bubble uc-user">Find all posts about Python published in 2025 and summarize the key themes</div>
+                    <div class="uc-tool">🔧 searchPosts({ query: "Python", after: "2025-01-01", before: "2025-12-31" })</div>
+                    <div class="uc-bubble uc-ai">Found 18 posts mentioning Python published in 2025. Key themes:<br><br><strong>1. Python + WordPress integration</strong> — 7 posts cover using Python scripts for content migration, data analysis, and automation via the REST API.<br><br><strong>2. Machine learning tutorials</strong> — 5 posts focus on practical ML implementations using Python, with emphasis on beginner-friendly approaches.<br><br><strong>3. DevOps and automation</strong> — 4 posts discuss Python-based deployment scripts and CI/CD pipelines for WordPress sites.<br><br><strong>4. Data visualization</strong> — 2 posts showcase embedding Python-generated charts into WordPress posts.</div>
+                </div>
+
+                <!-- WooCommerce -->
+                <div class="uc-content" id="uc-woo">
+                    <div class="uc-bubble uc-user">What products are low in stock and need restocking?</div>
+                    <div class="uc-tool">🔧 searchPosts({ postType: "product", metaKey: "stock_status", metaValue: "low_stock" })</div>
+                    <div class="uc-bubble uc-ai"><strong>⚠️ Pro feature — WooCommerce product management</strong><br><br>With AI Connect Pro, I can access your WooCommerce product data. Here's what I'd be able to show you:<br><br>— Products with stock below threshold<br>— Reorder recommendations based on sales velocity<br>— Supplier contact info linked to each product<br><br>The free tier supports searching posts and pages. Upgrade to Pro for full WooCommerce integration.</div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="uc-content" id="uc-analytics">
+                    <div class="uc-bubble uc-user">Which categories get the most comments? Show engagement patterns.</div>
+                    <div class="uc-tool">🔧 searchPosts({ orderBy: "comment_count", limit: 50 })</div>
+                    <div class="uc-bubble uc-ai">Analyzed comment distribution across all categories from the top 50 most-commented posts:<br><br><strong>1. Tutorials</strong> — 342 total comments (avg 12/post). Highest engagement category. Questions drive most replies.<br><br><strong>2. Opinion/Editorial</strong> — 287 comments (avg 19/post). Fewer posts but deeper discussions per post.<br><br><strong>3. News</strong> — 198 comments (avg 6/post). Quick reactions, shorter comment threads.<br><br><strong>Pattern:</strong> Posts published on Tuesday/Wednesday get 40% more comments. Posts with code examples get 2.3x more engagement than text-only articles.</div>
+                </div>
+
+                <!-- Community -->
+                <div class="uc-content" id="uc-community">
+                    <div class="uc-bubble uc-user">Find all comments from the last week that haven't been replied to</div>
+                    <div class="uc-tool">🔧 searchPosts({ orderBy: "date", limit: 30 })</div>
+                    <div class="uc-tool">🔧 getPost({ id: 1245, includeComments: true })</div>
+                    <div class="uc-bubble uc-ai">Found <strong>14 unanswered comments</strong> from the past 7 days across your site:<br><br><strong>High priority (on popular posts):</strong><br>— "How do I configure the SMTP settings?" on <em>Email Setup Guide</em> (3 days ago)<br>— "Getting a 500 error after update" on <em>Plugin Compatibility</em> (2 days ago)<br>— "Can this work with multisite?" on <em>Network Setup</em> (5 days ago)<br><br><strong>Pattern:</strong> Most unanswered comments are technical questions. Replying to these could improve reader retention — technical posts with author replies get 58% more return visits.</div>
+                </div>
+
+                <!-- Research -->
+                <div class="uc-content" id="uc-research">
+                    <div class="uc-bubble uc-user">Search for all posts mentioning React and summarize the recommendations</div>
+                    <div class="uc-tool">🔧 searchPosts({ query: "React", limit: 25 })</div>
+                    <div class="uc-bubble uc-ai">Found 25 posts mentioning React. Here's a summary of the recommendations:<br><br><strong>Consensus recommendations:</strong><br>— Use React for custom Gutenberg blocks (mentioned in 15 posts)<br>— Prefer functional components with hooks over class components<br>— Use @wordpress/scripts for build tooling instead of custom Webpack configs<br><br><strong>Debated topics:</strong><br>— Server-side rendering: split between Next.js advocates and those preferring WordPress's native approach<br>— State management: Redux vs. Context API — newer posts lean toward Context for simpler cases<br><br><strong>Most-cited tools:</strong> @wordpress/element, @wordpress/data, React Query for API calls</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+    <div class="container">
+        <div class="section-label">Features</div>
+        <h2 class="section-title">Everything you need to bridge AI and WordPress</h2>
+        <p class="section-desc">AI Connect provides a secure, standards-based protocol for AI agents to read and write site content — with full permission enforcement.</p>
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3>OAuth 2.0 with PKCE</h3>
+                <p>Industry-standard authentication. Every AI agent authenticates through a secure OAuth flow with proof key for code exchange — no secrets stored client-side.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>WordPress Permission Enforcement</h3>
+                <p>AI agents respect your WordPress roles and capabilities. Users only see content they're allowed to view.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                </div>
+                <h3>REST API Integration</h3>
+                <p>Built on the WordPress REST API. Zero configuration required — works with any standard WordPress installation.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3>WebMCP Protocol</h3>
+                <p>Built on the WebMCP standard for tool-use AI agents. Provides a manifest endpoint, tool discovery, and structured JSON responses that AI platforms understand natively.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <h3>Pre-configured AI Clients</h3>
+                <p>Ships with built-in OAuth client configurations for ChatGPT, Claude, Copilot, Gemini, Grok, DeepSeek, and Perplexity. Connect in minutes, not hours.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <h3>Built for WordPress 5.8+</h3>
+                <p>Native WordPress plugin with proper activation hooks, REST routes, and admin settings. Installs through the standard plugin manager — no file editing required.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tiers -->
+<section id="tiers">
+    <div class="container">
+        <div class="section-label">Plans</div>
+        <h2 class="section-title">Start free, scale when you need to</h2>
+        <p class="section-desc">The free tier covers read access and search. Upgrade to Pro when your AI agents need to create and manage content.</p>
+        <div class="tiers-grid">
+            <div class="tier-card fade-in">
+                <span class="tier-badge free">Free</span>
+                <h3>AI Connect</h3>
+                <p class="price">Core functionality, always free</p>
+                <ul class="tier-list">
+                    <li>Search posts and pages</li>
+                    <li>Read post and page content</li>
+                    <li>Get current user info</li>
+                    <li>Content translation (AI-powered or MyMemory)</li>
+                    <li>OAuth 2.0 with PKCE authentication</li>
+                    <li>WordPress permission enforcement</li>
+                    <li>Pre-configured AI client definitions</li>
+                    <li>WebMCP manifest and tool discovery</li>
+                </ul>
+            </div>
+            <div class="tier-card pro fade-in">
+                <span class="tier-badge pro-badge">Pro</span>
+                <h3>AI Connect Pro</h3>
+                <p class="price">Full read and write capabilities</p>
+                <ul class="tier-list">
+                    <li>Everything in Free</li>
+                    <li>Create new posts</li>
+                    <li>Update existing posts</li>
+                    <li>Manage comments</li>
+                    <li>WooCommerce product management</li>
+                    <li>Advanced user management</li>
+                    <li>Priority support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How it Works -->
+<section class="steps" id="how-it-works">
+    <div class="container">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">Up and running in four steps</h2>
+        <div class="steps-list">
+            <div class="step fade-in">
+                <div class="step-num">1</div>
+                <h3>Install the Plugin</h3>
+                <p>Upload through WordPress plugin manager or add via the plugins directory.</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-num">2</div>
+                <h3>Add the Manifest URL</h3>
+                <p>Copy your site's manifest URL into Claude Desktop, ChatGPT, or any WebMCP-compatible AI agent.</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-num">3</div>
+                <h3>Approve Access</h3>
+                <p>When the AI agent needs access, your users approve via a secure OAuth consent screen on your site.</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-num">4</div>
+                <h3>AI Chats with Your Site</h3>
+                <p>Ask questions, search posts, find pages — the AI agent uses your site's tools naturally.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact -->
+<section class="contact" id="contact">
+    <div class="container">
+        <div class="section-label">Contact</div>
+        <h2 class="section-title">Get in touch</h2>
+        <div class="contact-card fade-in">
+            <p>Have questions about AI Connect, need help with integration, or interested in the Pro tier? We'd love to hear from you.</p>
+            <a href="mailto:support@gold-t.co.il" class="contact-email">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                support@gold-t.co.il
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    &copy; 2026 Gold Technology. All rights reserved.
+</footer>
+
+<!-- Scripts -->
+<script>
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Use case tab switching
+    function showUseCase(id, el) {
+        document.querySelectorAll('.uc-content').forEach(function(e) { e.classList.remove('uc-active'); });
+        document.querySelectorAll('.uc-tab').forEach(function(e) { e.classList.remove('uc-tab-active'); });
+        document.getElementById('uc-' + id).classList.add('uc-active');
+        el.classList.add('uc-tab-active');
+    }
+
+    // Copy manifest URL
+    function copyManifest(btn) {
+        const url = document.getElementById('manifest-url').textContent;
+        navigator.clipboard.writeText(url).then(() => {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'Copy URL';
+                btn.classList.remove('copied');
+            }, 2000);
+        }).catch(() => {
+            // Fallback for older browsers / non-HTTPS
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'Copy URL';
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
