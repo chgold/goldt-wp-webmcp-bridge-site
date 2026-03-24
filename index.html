@@ -1042,30 +1042,24 @@
     // Copy manifest URL
     function copyManifest(btn) {
         const url = document.getElementById('manifest-url').textContent;
-        navigator.clipboard.writeText(url).then(() => {
+        function onCopied() {
             btn.textContent = 'Copied!';
             btn.classList.add('copied');
-            setTimeout(() => {
-                btn.textContent = 'Copy URL';
-                btn.classList.remove('copied');
-            }, 2000);
-        }).catch(() => {
-            // Fallback for older browsers / non-HTTPS
-            const textarea = document.createElement('textarea');
-            textarea.value = url;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            btn.textContent = 'Copied!';
-            btn.classList.add('copied');
-            setTimeout(() => {
-                btn.textContent = 'Copy URL';
-                btn.classList.remove('copied');
-            }, 2000);
-        });
+            setTimeout(() => { btn.textContent = 'Copy URL'; btn.classList.remove('copied'); }, 2000);
+        }
+        function fallback() {
+            const ta = document.createElement('textarea');
+            ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
+            onCopied();
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(url).then(onCopied).catch(fallback);
+        } else {
+            fallback();
+        }
     }
 </script>
 
